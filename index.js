@@ -32,6 +32,8 @@ async function run() {
     await client.connect();
 
     const productCollection=client.db('productDB').collection('product');
+    const userCollection=client.db('productDB').collection('user');
+    const cartCollection=client.db('productDB').collection('cart');
 
     // create product    
     app.post('/product',async(req,res)=>{
@@ -47,7 +49,6 @@ async function run() {
       const result=await cursor.toArray();
       res.send(result);
     })
-
 
     // update product
     app.get('/product/:id',async(req,res)=>{
@@ -75,8 +76,21 @@ async function run() {
       const result=await productCollection.updateOne(filter,product,options);
       res.send(result);
     })
-
-
+    // update login user
+    app.patch('/user',async(req,res)=>{
+      const user=req.body;
+      const filter={email: user.email}; 
+      const option={upsert:true};
+      const updateDoc={
+        $set:{  
+          createdAt:user.createdAt,
+          lastSignAt:user.lastSignAt,          
+          emailVerify:user.emailVerify,
+        }        
+      }
+      const result=await userCollection.updateOne(filter,updateDoc,option);
+      res.send(result);
+    })
     // delete product
     app.delete('/product/:id',async(req,res)=>{
       const id=req.params.id;
@@ -85,7 +99,82 @@ async function run() {
       res.send(result);
     })
 
-    // 
+
+   
+    // create user
+    app.post('/user', async(req,res)=>{
+      const newUser=req.body;
+      console.log(newUser);
+      const result=await userCollection.insertOne(newUser);
+      res.send(result);
+    })
+
+    // read or get user
+    app.get('/user',async(req,res)=>{
+      const cursor=userCollection.find();
+      const result=await cursor.toArray();
+      res.send(result);
+    })
+    // delete user
+    app.delete('/user/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)};
+      const result=await userCollection.deleteOne(query);
+      res.send(result);
+    })
+    // user update
+    app.get('/user/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)};
+      const result=await userCollection.findOne(query);
+      res.send(result);
+    })
+    app.put('/user/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: new ObjectId(id)};
+      const option={upsert: true};
+      const updateUser=req.body;
+      const user={
+        $set:{
+          name:updateUser.name,
+          photo:updateUser.photo,
+          email:updateUser.email,
+          password:updateUser.password
+        }
+      }
+      const result=await userCollection.updateOne(query,user,option);
+      res.send(result);
+    })
+
+    // for cart
+
+    // create cart
+    app.post('/cart',async(req,res)=>{
+      const product=req.body;
+      console.log(product);
+      const result=await cartCollection.insertOne(product);
+      res.send(result);
+    })
+    // get cart
+    app.get('/cart',async(req,res)=>{
+      const cursor=cartCollection.find();
+      const result=await cursor.toArray();
+      res.send(result);
+    })
+    // delete cart   
+    
+    app.delete('/cart/:id',async(req,res)=>{
+      const id=req.params.id;
+      const query={_id: id};
+      console.log(id, query);
+      const result =await cartCollection.deleteOne(query);
+      res.send(result);
+    })
+    app.delete('/cart',async(req,res)=>{
+      const result=await cartCollection.deleteMany({});
+      res.send(result);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
